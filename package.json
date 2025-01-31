@@ -1,0 +1,17 @@
+{
+  "name": "whatsapp-toolkit",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "server": "node server/server.js",
+    "wwebjs": "node wwebjs/wweb-client.js",
+    "baileys": "node baileys/client-baileys.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.26.0",
+    "ws": "^8.18.0"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

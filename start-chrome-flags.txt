@@ -1,0 +1,9 @@
+google-chrome-stable \
+--disable-web-security \
+--ignore-certificate-errors \
+--allow-insecure-localhost \
+--no-sandbox \
+--disable-setuid-sandbox \
+--disable-site-isolation-trials \
+--disable-features=IsolateOrigins,site-per-process \
+--unsafely-treat-insecure-origin-as-secure=http://localhost:8080

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Debug</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+
+        .container {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .column {
+            flex: 1;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-container {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .message {
+            border-bottom: 1px solid #333;
+            padding: 5px;
+            margin: 5px 0;
+            word-wrap: break-word;
+        }
+
+        .title {
+            border-bottom: 1px solid #00ff00;
+            padding: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .status {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #00ff00;
+        }
+
+        .connected {
+            color: #00ff00;
+        }
+
+        .disconnected {
+            color: #ff0000;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+
+        .btn:hover {
+            background: #333;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+
+        .search-box {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px;
+            margin-bottom: 10px;
+            width: calc(100% - 12px);
+            font-family: monospace;
+        }
+
+        .search-box::placeholder {
+            color: #006600;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message-input-wrapper {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px;
+            font-family: monospace;
+            resize: none;
+            min-height: 50px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .send-message {
+            margin-left: 10px;
+            align-self: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <div id="status" class="status disconnected">[ DISCONNECTED ]</div>
+    
+    <div class="container">
+        <div class="column">
+            <div class="title">whatsapp web</div>
+            <input type="text" class="search-box" id="wa-front-search" placeholder="search whatsapp web nodes...">
+            <button class="btn" onclick="clearMessages('wa-front')">Clear</button>
+            <div class="messages-container" id="wa-front"></div>
+            <div class="message-input-wrapper">
+                <textarea id="wa-front-message-input" class="message-input" placeholder="enter whatsapp web node..."></textarea>
+                <button id="wa-front-send-message" class="btn send-message" onclick="sendMessage('WA_FRONT')">Send</button>
+            </div>
+        </div>
+        <div class="column">
+            <div class="title">baileys</div>
+            <input type="text" class="search-box" id="baileys-search" placeholder="search baileys nodes...">
+            <button class="btn" onclick="clearMessages('baileys')">Clear</button>
+            <div class="messages-container" id="baileys"></div>
+            <div class="message-input-wrapper">
+                <textarea id="baileys-message-input" class="message-input" placeholder="enter baileys node..."></textarea>
+                <button id="baileys-send-message" class="btn send-message" onclick="sendMessage('BAILEYS')">Send</button>
+            </div>
+        </div>
+        <div class="column">
+            <div class="title">whatsmeow</div>
+            <input type="text" class="search-box" id="baileys-search" placeholder="search whatsmeow node...">
+            <button class="btn" onclick="clearMessages('baileys')">Clear</button>
+            <div class="messages-container" id="baileys"></div>
+            <div class="message-input-wrapper">
+                <textarea id="baileys-message-input" class="message-input" placeholder="enter whatsmeow node..."></textarea>
+                <button id="baileys-send-message" class="btn send-message" onclick="sendMessage('BAILEYS')">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        const statusElement = document.getElementById('status');
+        const waFrontElement = document.getElementById('wa-front');
+        const baileysElement = document.getElementById('baileys');
+        const waFrontSearch = document.getElementById('wa-front-search');
+        const baileysSearch = document.getElementById('baileys-search');
+        const waFrontMessageInput = document.getElementById('wa-front-message-input');
+        const baileysMessageInput = document.getElementById('baileys-message-input');
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        waFrontMessageInput.addEventListener('input', () => autoResize(waFrontMessageInput));
+        baileysMessageInput.addEventListener('input', () => autoResize(baileysMessageInput));
+
+        function filterMessages(searchElement, containerElement) {
+            const searchText = searchElement.value.toLowerCase();
+            const messages = containerElement.getElementsByClassName('message');
+            
+            Array.from(messages).forEach(message => {
+                const messageText = message.textContent.toLowerCase();
+                message.classList.toggle('hidden', !messageText.includes(searchText));
+            });
+        }
+
+        waFrontSearch.addEventListener('input', () => filterMessages(waFrontSearch, waFrontElement));
+        baileysSearch.addEventListener('input', () => filterMessages(baileysSearch, baileysElement));
+
+        function sendMessage(type) {
+            let messageInput, messageContainer;
+            if (type === 'WA_FRONT') {
+                messageInput = waFrontMessageInput;
+                messageContainer = waFrontElement;
+            } else if (type === 'BAILEYS') {
+                messageInput = baileysMessageInput;
+                messageContainer = baileysElement;
+            }
+
+            const message = messageInput.value.trim();
+            if (message && ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                    ws.send(JSON.stringify({
+                        type: type,
+                        data: message
+                    }));
+                    
+                    // Create a message element to show sent message
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message';
+                    const pre = document.createElement('pre');
+                    pre.textContent = `[SENT] ${message}`;
+                    messageElement.appendChild(pre);
+                    messageContainer.insertBefore(messageElement, messageContainer.firstChild);
+                    
+                    // Clear input and reset height
+                    messageInput.value = '';
+                    messageInput.style.height = '50px';
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                }
+            }
+        }
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = () => {
+                statusElement.textContent = '[ CONNECTED ]';
+                statusElement.classList.remove('disconnected');
+                statusElement.classList.add('connected');
+                ws.send(JSON.stringify({ tag: 'frontapp' }));
+            };
+
+            ws.onclose = () => {
+                statusElement.textContent = '[ DISCONNECTED - Retrying... ]';
+                statusElement.classList.remove('connected');
+                statusElement.classList.add('disconnected');
+                setTimeout(connect, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message';
+                    
+                    const pre = document.createElement('pre');
+                    // Mostrar apenas o conteúdo de data
+                    pre.textContent = JSON.stringify(data.data, null, 2);
+                    messageElement.appendChild(pre);
+
+                    let searchElement, containerElement;
+                    if (data.type === 'WA_FRONT') {
+                        searchElement = waFrontSearch;
+                        containerElement = waFrontElement;
+                    } else if (data.type === 'BAILEYS') {
+                        searchElement = baileysSearch;
+                        containerElement = baileysElement;
+                    }
+
+                    const searchText = searchElement.value.toLowerCase();
+                    
+                    if (!searchText || pre.textContent.toLowerCase().includes(searchText)) {
+                        messageElement.classList.remove('hidden');
+                    } else {
+                        messageElement.classList.add('hidden');
+                    }
+
+                    containerElement.insertBefore(messageElement, containerElement.firstChild);
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                }
+            };
+        }
+
+        function clearMessages(type) {
+            if (type === 'wa-front') {
+                waFrontElement.innerHTML = '';
+                waFrontSearch.value = '';
+            } else if (type === 'baileys') {
+                baileysElement.innerHTML = '';
+                baileysSearch.value = '';
+            }
+        }
+
+        // Add event listeners for Enter key in message inputs
+        waFrontMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage('WA_FRONT');
+            }
+        });
+
+        baileysMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage('BAILEYS');
+            }
+        });
+
+        connect();
+    </script>
+</body>
+</html>
