@@ -28,18 +28,26 @@ const httpServer = http.createServer((req, res) => {
 });
 
 const wsServer = new WebSocket.Server({ server: httpServer });
-const clients = new Set();
+const webClients = new Set();
 
 wsServer.on('connection', (ws) => {
-  clients.add(ws);
   ws.on('message', (message) => {
     try {
       const data = JSON.parse(message.toString());
-      clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(data));
-        }
-      });
+      switch (data?.tag) {
+        case 'frontapp':
+          webClients.add(ws);
+          break;
+        case 'ping':
+          ws.send(JSON.stringify({ tag: 'pong' }));
+          break;
+        default:
+          webClients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(JSON.stringify(data));
+            }
+          });
+      }
     } catch (error) {
       console.error('erro ao processar mensagem:', error);
     }

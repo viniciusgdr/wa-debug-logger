@@ -29,6 +29,9 @@ const { WebSocket } = require('ws');
       if (ws) {
         ws.onopen = () => {
           console.log('WebSocket connection established');
+          setInterval(() => {
+            ws.send(JSON.stringify({ tag: 'ping' }));
+          }, 10000);
         };
 
         ws.onerror = (error) => {
