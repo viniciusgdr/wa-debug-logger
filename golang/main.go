@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/joho/godotenv"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -23,7 +22,6 @@ func main() {
 		fmt.Println("Error loading .env file")
 		panic(err)
 	}
-	time.Local, _ = time.LoadLocation("America/Sao_Paulo")
 	err = websocket.ConnectWebSocket("localhost:8080")
 	if err != nil {
 		log.Fatal("Erro ao conectar:", err)
@@ -41,7 +39,6 @@ func main() {
 		"CODE",
 	)
 	fmt.Println("🚀 Clients started!")
-	websocket.SendMessage("🚀 Clients started!")
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
