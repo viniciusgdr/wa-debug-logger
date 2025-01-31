@@ -1,18 +1,28 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import WhatsmeowLogs from "./components/WhatsmeowLogs";
-import OtherLogs from "./components/OtherLogs";
+import Logs from "./components/Logs"; 
 
-type Message = {
+export type Message = {
   type: string;
-  content: string;
-  timestamp: number;
+  data: string;
 };
 
+const messages: Message[] = [
+  {
+    type: "whatsmeow",
+    data: "Hello, Whatsmeow!",
+  },
+  {
+    type: "other",
+    data: "Hello, Other!",
+  },
+];
+
 export default function Home() {
-  const [whatsmeowMessages, setWhatsmeowMessages] = useState<any[]>([]);
-  const [otherMessages, setOtherMessages] = useState<any[]>([]);
+  const [whatsmeowMessages, setWhatsmeowMessages] =
+    useState<Message[]>(messages);
+  const [otherMessages, setOtherMessages] = useState<Message[]>(messages);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -54,9 +64,21 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="grid grid-cols-2 h-screen">
-      <WhatsmeowLogs messages={whatsmeowMessages} />
-      <OtherLogs messages={otherMessages} />
+    <main className="flex flex-col md:grid grid-cols-2 h-screen gap-1">
+      <div className="min-h-screen ">
+        <Logs
+          messages={whatsmeowMessages}
+          title="Whatsmeow Messages"
+          bgcolor="bg-slate-600"
+        />
+      </div>
+      <div className="min-h-screen">
+      <Logs
+        messages={otherMessages}
+        title="Whatsapp Web Messages"
+        bgcolor="bg-gray-800"
+      />
+      </div>
     </main>
   );
 }
