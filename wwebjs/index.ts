@@ -102,20 +102,6 @@ import { WebSocket as NodeWebsocket } from 'ws';
         console.log(args[0]);
         return result;
       };
-
-      // @ts-ignore
-      if (!window.decodeBack) {
-        // @ts-ignore
-        window.decodeBack = require("decodeProtobuf").decodeProtobuf;
-      }
-
-      // @ts-ignore
-      require("decodeProtobuf").decodeProtobuf = (a, b) => {
-        // @ts-ignore
-        const result = window.decodeBack(a, b);
-        console.log(result);
-        return result;
-      };
     });
   });
 
