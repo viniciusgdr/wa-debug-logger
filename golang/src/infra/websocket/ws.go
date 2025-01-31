@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/url"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -27,6 +28,7 @@ func ConnectWebSocket(serverURL string) error {
 			"tag": "ping",
 		}
 		for {
+			time.Sleep(10 * time.Second)
 			err := Conn.WriteJSON(jsonMessage)
 			if err != nil {
 				log.Println("Error sending ping:", err)
@@ -46,7 +48,7 @@ func SendMessage(message string) error {
 	}
 
 	jsonMessage := map[string]string{
-		"type": "whatsmeow",
+		"type": "WHATSMEOW",
 		"data": message,
 	}
 

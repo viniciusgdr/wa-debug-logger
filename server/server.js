@@ -54,7 +54,7 @@ wsServer.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    clients.delete(ws);
+    webClients.delete(ws);
   });
 });
 
