@@ -3,3 +3,5 @@ temp/db
 temp/baileys_auth_info
 node_modules
 golang/.env
+wwebjs/db/*
+wwebjs/.*
